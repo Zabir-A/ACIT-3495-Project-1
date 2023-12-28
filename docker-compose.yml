@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  enter-grades-app:
+    build: 
+      context: ./enter-grades-app
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    networks:
+      - project_network
+
+  auth-service:
+    build: 
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    networks:
+      - project_network
+
+  mongodb:
+    image: mongo:4.4  
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - project_network
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: students
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - project_network
+
+  analytics-service:
+    build: 
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    networks:
+      - project_network
+    depends_on:
+      - mysql
+      - mongodb
+
+  show-results-app:
+    build: 
+      context: ./show-results-app
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+    networks:
+      - project_network
+
+volumes:
+  mysql-data:
+  mongodb-data:
+
+networks:
+  project_network:
+    external: true
